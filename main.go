@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GetBingPictures/fetcher"
+	"GetBingPictures/channel"
 	"GetBingPictures/lib"
 	"GetBingPictures/parser"
 	"fmt"
@@ -26,23 +26,23 @@ var (
 )
 
 func main() {
-	result, _ := fetcher.Fetch(homePage)
-	subMatch := end.FindSubmatch(result)
-	endNum, _ := strconv.Atoi(string(subMatch[1]))
-	fmt.Printf("Newest Wallpaper ID is %d\n", endNum)
-
+	parser.FetchNewestId(homePage, end)
 	err := mylib.CreatePath(path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
 	}
 
-	fmt.Scanf("%s", "Blocking, press any key to exit")
+	getBingPictures()
+
+	fmt.Scanf("%s", "Press any key to exit")
 }
 
-func createWorker(id int) chan<- int {
-
-	return nil
+func getBingPictures() {
+	var channels [10]chan<- int
+	for i := 0; i < 10; i++ {
+		channels[i] = channel.CreateWorker(i, worker)
+	}
 }
 
 func worker(id int, ch chan int) {
