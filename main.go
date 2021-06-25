@@ -1,7 +1,6 @@
 package main
 
 import (
-	"GetBingPictures/channel"
 	"GetBingPictures/lib"
 	"GetBingPictures/parser"
 	"fmt"
@@ -11,14 +10,19 @@ import (
 	"sync"
 )
 
+type worker struct {
+	in   chan int
+	done func()
+}
+
 const (
-	homePage = "https://wallpaperhub.app/"
-	target   = "https://wallpaperhub.app/wallpapers/"
-	path     = "wallpapers"
+	homePage       = "https://wallpaperhub.app/"
+	target         = "https://wallpaperhub.app/wallpapers/"
+	path           = "wallpapers"
+	workerTotalNum = 20
 )
 
 var (
-	wg      sync.WaitGroup
 	start   = 0
 	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
 	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
@@ -26,28 +30,50 @@ var (
 )
 
 func main() {
-	parser.FetchNewestId(homePage, end)
+	endNum := parser.FetchNewestId(homePage, end)
 	err := mylib.CreatePath(path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
 	}
 
-	getBingPictures()
+	getBingPictures(endNum)
 
 	fmt.Scanf("%s", "Press any key to exit")
 }
 
-func getBingPictures() {
-	var channels [10]chan<- int
-	for i := 0; i < 10; i++ {
-		channels[i] = channel.CreateWorker(i, worker)
+func getBingPictures(endNum int) {
+	var wg sync.WaitGroup
+	var workers [workerTotalNum]worker
+	wg.Add(endNum)
+	for i := 0; i < workerTotalNum; i++ {
+		workers[i] = createWorker(i, &wg)
 	}
+
+	for task := start; task <= endNum; task++ {
+		for i, worker := range workers {
+			if task%(workerTotalNum+1) == i {
+				worker.in <- task
+			}
+		}
+	}
+	wg.Wait()
 }
 
-func worker(id int, ch chan int) {
-	for i := range ch {
-		parser.Parser(i, target+strconv.Itoa(id), path, picName, picUrl)
+func createWorker(id int, wg *sync.WaitGroup) worker {
+	w := worker{
+		in: make(chan int, 1024),
+		done: func() {
+			wg.Done()
+		},
 	}
-	wg.Done()
+	go doWork(id, w)
+	return w
+}
+
+func doWork(id int, w worker) {
+	for i := range w.in {
+		parser.Parser(i, id, target+strconv.Itoa(i), path, picName, picUrl)
+		w.done()
+	}
 }

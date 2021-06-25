@@ -8,19 +8,15 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"time"
 )
 
-var rateLimiter = time.Tick(100 * time.Millisecond)
-
-func Parser(id int, url, path string, picName, picUrl *regexp.Regexp) {
-	<-rateLimiter
-	fmt.Println("Fetching:", url)
+func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp) {
+	fmt.Printf("Worker %d received %d, and begin fetching: %s\n", wid, pid, url)
 	result, _ := fetcher.Fetch(url)
 	subMatch1 := picName.FindSubmatch(result)
 	subMatch2 := picUrl.FindSubmatch(result)
 	if subMatch1 == nil || subMatch2 == nil {
-		fmt.Printf("No wallpaper with ID %d found\n", id)
+		fmt.Printf("No wallpaper with ID %d found\n", pid)
 		return
 	}
 	subMatch1[1] = append(subMatch1[1], ".jpg"...)
@@ -48,9 +44,10 @@ func Parser(id int, url, path string, picName, picUrl *regexp.Regexp) {
 
 }
 
-func FetchNewestId(homePage string, end *regexp.Regexp) {
+func FetchNewestId(homePage string, end *regexp.Regexp) int {
 	result, _ := fetcher.Fetch(homePage)
 	subMatch := end.FindSubmatch(result)
 	endNum, _ := strconv.Atoi(string(subMatch[1]))
 	fmt.Printf("Newest Wallpaper ID is %d\n", endNum)
+	return endNum
 }
