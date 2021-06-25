@@ -18,11 +18,11 @@ const (
 )
 
 var (
-	wg          sync.WaitGroup
-	start       = 0
-	end         = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
-	picName     = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
-	picUrl      = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
+	wg      sync.WaitGroup
+	start   = 0
+	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
+	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
+	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
 )
 
 func main() {
@@ -37,20 +37,17 @@ func main() {
 		return
 	}
 
-
 	fmt.Scanf("%s", "Blocking, press any key to exit")
 }
 
 func createWorker(id int) chan<- int {
+
+	return nil
+}
+
+func worker(id int, ch chan int) {
 	for i := range ch {
 		parser.Parser(i, target+strconv.Itoa(id), path, picName, picUrl)
 	}
 	wg.Done()
-	return nil
 }
-
-
-
-
-
-
