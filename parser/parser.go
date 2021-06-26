@@ -49,7 +49,6 @@ func Parser(pid, wid int, fp *os.File) {
 	}
 
 	subMatch1[1] = append(subMatch1[1], ".jpg"...)
-	fmt.Printf("%s\n", subMatch1[1])
 
 	fmt.Printf("Find and begin download: %s\n", subMatch1[1])
 	resp, err := http.Get(string(subMatch2[1]))
