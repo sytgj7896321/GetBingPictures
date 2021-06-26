@@ -23,7 +23,8 @@ func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool, 
 			wg.Done()
 		},
 	}
-	go doWork(id, w, fp, logMap, rateLimiter)
+	//go doWork(id, w, fp, logMap, rateLimiter)
+	go doWorkDemo(id, w, fp, logMap, rateLimiter)
 	return w
 }
 
@@ -34,6 +35,13 @@ func doWork(id int, w Worker, fp *os.File, logMap map[int]bool, rateLimiter <-ch
 			parser.Parser(i, id, fp)
 			w.done()
 		}
+	}
+}
+
+func doWorkDemo(id int, w Worker, fp *os.File, logMap map[int]bool, rateLimiter <-chan time.Time) {
+	for i := range w.In {
+		fmt.Printf("Receiver %d get %d\n", id, i)
+		w.done()
 	}
 }
 
