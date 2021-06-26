@@ -7,11 +7,12 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 )
 
 const (
 	logName     = "record.log"
-	concurrency = 5
+	concurrency = 4
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 
 func main() {
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
-	flag.IntVar(&timeTick, "t", 200, "Set number of millisecond between sending http requests, require not quick than 200")
+	flag.IntVar(&timeTick, "t", 500, "Set number of millisecond between sending http requests, require not quick than 300")
 	flag.Parse()
 
 	endNum := parser.FetchNewestId(parser.HomePage)
@@ -37,16 +38,17 @@ func main() {
 	}
 	defer fp.Close()
 	mapLog := channel.ScannerLog(fp, overwrite)
-	getBingPictures(endNum, fp, mapLog)
+	rateLimiter := time.Tick(time.Duration(timeTick) * time.Millisecond)
+	getBingPictures(endNum, fp, mapLog, rateLimiter)
 
 }
 
-func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
+func getBingPictures(endNum int, fp *os.File, logMap map[int]bool, rateLimiter <-chan time.Time) {
 	var wg sync.WaitGroup
 	var workers [concurrency]channel.Worker
 	wg.Add(endNum)
 	for i := 0; i < concurrency; i++ {
-		workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
+		workers[i] = channel.CreateWorker(i, &wg, fp, logMap, rateLimiter)
 	}
 
 	for task := 0; task <= endNum; task++ {
