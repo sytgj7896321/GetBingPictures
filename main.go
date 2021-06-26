@@ -10,14 +10,20 @@ import (
 )
 
 const (
-	logName        = "record.log"
-	workerTotalNum = 20
+	logName     = "record.log"
+	concurrency = 5
+)
+
+var (
+	overwrite bool
+	timeTick  int
 )
 
 func main() {
-	var overwrite bool
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
+	flag.IntVar(&timeTick, "t", 200, "Set number of millisecond between sending http requests, require not quick than 200")
 	flag.Parse()
+
 	endNum := parser.FetchNewestId(parser.HomePage)
 	err := createPath(parser.Path)
 	if err != nil {
@@ -37,15 +43,15 @@ func main() {
 
 func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
 	var wg sync.WaitGroup
-	var workers [workerTotalNum]channel.Worker
+	var workers [concurrency]channel.Worker
 	wg.Add(endNum)
-	for i := 0; i < workerTotalNum; i++ {
+	for i := 0; i < concurrency; i++ {
 		workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
 	}
 
 	for task := 0; task <= endNum; task++ {
 		for i, worker := range workers {
-			if task%(workerTotalNum+1) == i {
+			if task%(concurrency+1) == i {
 				worker.In <- task
 			}
 		}
