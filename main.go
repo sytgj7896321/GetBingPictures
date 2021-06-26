@@ -3,9 +3,9 @@ package main
 import (
 	"GetBingPictures/parser"
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,14 +24,11 @@ const (
 	workerTotalNum = 20
 )
 
-var (
-	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
-	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
-	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
-)
-
 func main() {
-	endNum := parser.FetchNewestId(homePage, end)
+	var overwrite bool
+	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
+	flag.Parse()
+	endNum := parser.FetchNewestId(homePage)
 	err := createPath(path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
@@ -43,7 +40,7 @@ func main() {
 		return
 	}
 	defer fp.Close()
-	mapLog := scannerLog(fp)
+	mapLog := scannerLog(fp, overwrite)
 	getBingPictures(endNum, fp, mapLog)
 
 }
@@ -80,7 +77,7 @@ func createWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool) 
 func doWork(id int, w worker, fp *os.File, logMap map[int]bool) {
 	for i := range w.in {
 		if !logMap[i] {
-			parser.Parser(i, id, target+strconv.Itoa(i), path, picName, picUrl, fp)
+			parser.Parser(i, id, target+strconv.Itoa(i), path, fp)
 			w.done()
 		}
 	}
@@ -102,7 +99,7 @@ func createPath(path string) error {
 	return err
 }
 
-func scannerLog(fp *os.File) map[int]bool {
+func scannerLog(fp *os.File, overwrite bool) map[int]bool {
 	var logScanner = map[int]bool{}
 	scanner := bufio.NewScanner(fp)
 	if err := scanner.Err(); err != nil {
@@ -110,9 +107,13 @@ func scannerLog(fp *os.File) map[int]bool {
 		return nil
 	} else {
 		for scanner.Scan() {
-			total := strings.Split(scanner.Text(), " ")
-			id, _ := strconv.Atoi(total[3])
-			logScanner[id] = true
+			stringSlice := strings.Split(scanner.Text(), " ")
+			id, _ := strconv.Atoi(stringSlice[3])
+			if overwrite && stringSlice[4] == "Found" {
+				logScanner[id] = false
+			} else {
+				logScanner[id] = true
+			}
 		}
 		return logScanner
 	}

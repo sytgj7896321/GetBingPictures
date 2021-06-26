@@ -11,7 +11,13 @@ import (
 	"strconv"
 )
 
-func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *os.File) {
+var (
+	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
+	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
+	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
+)
+
+func Parser(pid, wid int, url, path string, fp *os.File) {
 	log.SetOutput(fp)
 	log.SetPrefix("[GetBingTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -45,11 +51,11 @@ func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *
 		return
 	}
 	fmt.Printf("ID %d %s download completed\n", pid, string(subMatch1[1]))
-	log.Printf("%d Downloaded %s\n", pid, string(subMatch1[1]))
+	log.Printf("%d Found %s\n", pid, string(subMatch1[1]))
 
 }
 
-func FetchNewestId(homePage string, end *regexp.Regexp) int {
+func FetchNewestId(homePage string) int {
 	result, _ := fetcher.Fetch(homePage)
 	subMatch := end.FindSubmatch(result)
 	endNum, _ := strconv.Atoi(string(subMatch[1]))
