@@ -10,13 +10,14 @@ import (
 	"strconv"
 )
 
-func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp) {
+func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *os.File) {
 	fmt.Printf("Worker %d received %d, and begin fetching: %s\n", wid, pid, url)
 	result, _ := fetcher.Fetch(url)
 	subMatch1 := picName.FindSubmatch(result)
 	subMatch2 := picUrl.FindSubmatch(result)
 	if subMatch1 == nil || subMatch2 == nil {
 		fmt.Printf("No wallpaper with ID %d found\n", pid)
+		fp.WriteString(strconv.Itoa(pid) + " " + "none\n")
 		return
 	}
 	subMatch1[1] = append(subMatch1[1], ".jpg"...)
@@ -26,13 +27,11 @@ func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp) {
 	if err != nil {
 		fmt.Fprint(os.Stderr, "Get Image Error", err)
 	}
-
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Fprint(os.Stderr, "IO Read Error", err)
 		return
 	}
-
 	defer resp.Body.Close()
 
 	err = ioutil.WriteFile(path+"/"+string(subMatch1[1]), data, 0755)
@@ -41,6 +40,7 @@ func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp) {
 		return
 	}
 	fmt.Printf("%s download completed\n", string(subMatch1[1]))
+	fp.WriteString(strconv.Itoa(pid) + " " + "download\n")
 
 }
 

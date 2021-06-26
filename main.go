@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	start   = 0
+	start   = 9244
 	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
 	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
 	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
@@ -31,23 +31,30 @@ var (
 
 func main() {
 	endNum := parser.FetchNewestId(homePage, end)
-	err := mylib.CreatePath(path)
+	err := myfile.CreatePath(path)
+	if err != nil {
+		fmt.Fprint(os.Stderr, ", Exit Programme", err)
+		return
+	}
+	fp, err := myfile.OpenFile("record")
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
 	}
 
-	getBingPictures(endNum)
+	getBingPictures(endNum, fp)
+
+	defer fp.Close()
 
 	fmt.Scanf("%s", "Press any key to exit")
 }
 
-func getBingPictures(endNum int) {
+func getBingPictures(endNum int, fp *os.File) {
 	var wg sync.WaitGroup
 	var workers [workerTotalNum]worker
 	wg.Add(endNum)
 	for i := 0; i < workerTotalNum; i++ {
-		workers[i] = createWorker(i, &wg)
+		workers[i] = createWorker(i, &wg, fp)
 	}
 
 	for task := start; task <= endNum; task++ {
@@ -60,20 +67,20 @@ func getBingPictures(endNum int) {
 	wg.Wait()
 }
 
-func createWorker(id int, wg *sync.WaitGroup) worker {
+func createWorker(id int, wg *sync.WaitGroup, fp *os.File) worker {
 	w := worker{
 		in: make(chan int, 1024),
 		done: func() {
 			wg.Done()
 		},
 	}
-	go doWork(id, w)
+	go doWork(id, w, fp)
 	return w
 }
 
-func doWork(id int, w worker) {
+func doWork(id int, w worker, fp *os.File) {
 	for i := range w.in {
-		parser.Parser(i, id, target+strconv.Itoa(i), path, picName, picUrl)
+		parser.Parser(i, id, target+strconv.Itoa(i), path, picName, picUrl, fp)
 		w.done()
 	}
 }
