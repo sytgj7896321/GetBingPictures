@@ -22,7 +22,7 @@ var (
 
 func main() {
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
-	flag.IntVar(&timeTick, "t", 800, "Set number of millisecond between sending http requests, require not quick than 300")
+	flag.IntVar(&timeTick, "t", 1000, "Set number of millisecond between sending http requests, require not quick than 500")
 	flag.Parse()
 
 	endNum := parser.FetchNewestId(parser.HomePage)

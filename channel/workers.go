@@ -18,7 +18,7 @@ type Worker struct {
 
 func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool, rateLimiter <-chan time.Time) Worker {
 	w := Worker{
-		In: make(chan int, 1024),
+		In: make(chan int, 32),
 		done: func() {
 			wg.Done()
 		},
