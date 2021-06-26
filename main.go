@@ -1,7 +1,6 @@
 package main
 
 import (
-	"GetBingPictures/lib"
 	"GetBingPictures/parser"
 	"fmt"
 	"os"
@@ -31,7 +30,7 @@ var (
 
 func main() {
 	endNum := parser.FetchNewestId(homePage, end)
-	err := myfile.CreatePath(path)
+	err := createPath(path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
@@ -45,8 +44,8 @@ func main() {
 	getBingPictures(endNum, fp)
 
 	defer fp.Close()
-
-	fmt.Scanf("%s", "Press any key to exit")
+	fmt.Println("Press any key to exit")
+	select {}
 }
 
 func getBingPictures(endNum int, fp *os.File) {
@@ -83,4 +82,20 @@ func doWork(id int, w worker, fp *os.File) {
 		parser.Parser(i, id, target+strconv.Itoa(i), path, picName, picUrl, fp)
 		w.done()
 	}
+}
+
+func createPath(path string) error {
+	_, err := os.Stat(path)
+	if err == nil {
+		return nil
+	}
+	if os.IsNotExist(err) {
+		err := os.Mkdir(path, 0755)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Path '" + path + "' created")
+		return nil
+	}
+	return err
 }
