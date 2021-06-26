@@ -12,17 +12,15 @@ import (
 
 const (
 	logName     = "record.log"
-	concurrency = 10
+	concurrency = 4
 )
 
 var (
 	overwrite bool
-	timeTick  int
 )
 
 func main() {
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
-	flag.IntVar(&timeTick, "t", 5, "Set number of millisecond between sending http requests, require not quick than 500")
 	flag.Parse()
 
 	endNum := parser.FetchNewestId(parser.HomePage)
@@ -38,18 +36,24 @@ func main() {
 	}
 	defer fp.Close()
 	mapLog := channel.ScannerLog(fp, overwrite)
-	rateLimiter := time.Tick(time.Duration(timeTick) * time.Second)
-	getBingPictures(endNum, fp, mapLog, rateLimiter)
-
+	getBingPictures(endNum, fp, mapLog)
+	fmt.Println("All done, Ctrl+C or 5 seconds later will exit programme")
+	timeout := time.After(5 * time.Second)
+	for {
+		select {
+		case <-timeout:
+			fmt.Println("Exited")
+			return
+		}
+	}
 }
 
-func getBingPictures(endNum int, fp *os.File, logMap map[int]bool, rateLimiter <-chan time.Time) {
+func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
 	var wg sync.WaitGroup
 	var workers [concurrency]channel.Worker
-	defer wg.Done()
 	wg.Add(endNum + 1)
 	for i := 0; i < concurrency; i++ {
-		workers[i] = channel.CreateWorker(i, &wg, fp, logMap, rateLimiter)
+		workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
 	}
 
 	for task := 0; task <= endNum; task++ {
@@ -59,7 +63,6 @@ func getBingPictures(endNum int, fp *os.File, logMap map[int]bool, rateLimiter <
 			}
 		}
 	}
-	wg.Wait()
 }
 
 func createPath(path string) error {
