@@ -42,13 +42,10 @@ func main() {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
 	}
-
+	defer fp.Close()
 	mapLog := scannerLog(fp)
-	fmt.Println(mapLog)
-
 	getBingPictures(endNum, fp, mapLog)
 
-	defer fp.Close()
 }
 
 func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
