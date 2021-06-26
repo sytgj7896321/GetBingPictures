@@ -41,18 +41,18 @@ func Parser(pid, wid int, fp *os.File) {
 	fmt.Printf("Find and begin download: %s\n", subMatch1[1])
 	resp, err := http.Get(string(subMatch2[1]))
 	if err != nil {
-		fmt.Fprint(os.Stderr, "Get Image Error", err)
+		fmt.Fprint(os.Stderr, "Get Image Error ", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Fprint(os.Stderr, "IO Read Error", err)
+		fmt.Fprint(os.Stderr, "IO Read Error ", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	err = ioutil.WriteFile(Path+"/"+string(subMatch1[1]), data, 0755)
 	if err != nil {
-		fmt.Fprint(os.Stderr, "IO Write Error", err)
+		fmt.Fprint(os.Stderr, "IO Write Error ", err)
 		return
 	}
 	fmt.Printf("ID %d %s download completed\n", pid, string(subMatch1[1]))

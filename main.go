@@ -28,12 +28,12 @@ func main() {
 	endNum := parser.FetchNewestId(parser.HomePage)
 	err := createPath(parser.Path)
 	if err != nil {
-		fmt.Fprint(os.Stderr, ", Exit Programme", err)
+		fmt.Fprint(os.Stderr, ", Exit Programme ", err)
 		return
 	}
 	fp, err := os.OpenFile(logName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Fprint(os.Stderr, ", Exit Programme", err)
+		fmt.Fprint(os.Stderr, ", Exit Programme ", err)
 		return
 	}
 	defer fp.Close()
