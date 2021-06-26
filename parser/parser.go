@@ -4,6 +4,7 @@ import (
 	"GetBingPictures/fetcher"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -11,13 +12,17 @@ import (
 )
 
 func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *os.File) {
-	fmt.Printf("Worker %d received %d, and begin fetching: %s\n", wid, pid, url)
+	log.SetOutput(fp)
+	log.SetPrefix("[GetBingTool]")
+	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
+
+	fmt.Printf("Worker %d received Task %d, and begin fetching\n", wid, pid)
 	result, _ := fetcher.Fetch(url)
 	subMatch1 := picName.FindSubmatch(result)
 	subMatch2 := picUrl.FindSubmatch(result)
 	if subMatch1 == nil || subMatch2 == nil {
 		fmt.Printf("No wallpaper with ID %d found\n", pid)
-		fp.WriteString(strconv.Itoa(pid) + " " + "none\n")
+		log.Printf("%d Not\u00a0found\n", pid)
 		return
 	}
 	subMatch1[1] = append(subMatch1[1], ".jpg"...)
@@ -40,7 +45,7 @@ func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *
 		return
 	}
 	fmt.Printf("%s download completed\n", string(subMatch1[1]))
-	fp.WriteString(strconv.Itoa(pid) + " " + "download\n")
+	log.Printf("%d Downloaded\n", pid)
 
 }
 

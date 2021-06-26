@@ -36,7 +36,7 @@ func main() {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
 	}
-	fp, err := myfile.OpenFile("record")
+	fp, err := os.OpenFile("record.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return

@@ -11,7 +11,7 @@ func CreatePath(path string) error {
 		return nil
 	}
 	if os.IsNotExist(err) {
-		err := os.Mkdir(path, 0666)
+		err := os.Mkdir(path, 0755)
 		if err != nil {
 			return err
 		}
@@ -19,17 +19,4 @@ func CreatePath(path string) error {
 		return nil
 	}
 	return err
-}
-
-func OpenFile(name string) (*os.File, error) {
-	_, err := os.Stat(name)
-	if err == nil {
-		fp, err := os.Open(name)
-		return fp, err
-	}
-	if os.IsNotExist(err) {
-		fp, err := os.Create(name)
-		return fp, err
-	}
-	return nil, err
 }
