@@ -12,7 +12,7 @@ import (
 
 const (
 	logName     = "record.log"
-	concurrency = 4
+	concurrency = 8
 )
 
 var (

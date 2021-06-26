@@ -8,15 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type Worker struct {
 	In   chan int
 	done func()
 }
-
-var rateLimiter = time.Tick(1 * time.Millisecond)
 
 func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool) Worker {
 	w := Worker{
@@ -31,7 +28,6 @@ func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool) 
 
 func doWork(id int, w Worker, fp *os.File, logMap map[int]bool) {
 	for i := range w.In {
-		<-rateLimiter
 		if !logMap[i] {
 			parser.Parser(i, id, fp)
 			w.done()
