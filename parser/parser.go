@@ -14,7 +14,7 @@ import (
 func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *os.File) {
 	log.SetOutput(fp)
 	log.SetPrefix("[GetBingTool]")
-	log.SetFlags(log.LstdFlags | log.Lshortfile | log.LUTC)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	fmt.Printf("Worker %d received Task %d, and begin fetching\n", wid, pid)
 	result, _ := fetcher.Fetch(url)
@@ -44,8 +44,8 @@ func Parser(pid, wid int, url, path string, picName, picUrl *regexp.Regexp, fp *
 		fmt.Fprint(os.Stderr, "IO Write Error", err)
 		return
 	}
-	fmt.Printf("%s download completed\n", string(subMatch1[1]))
-	log.Printf("%d Downloaded\n", pid)
+	fmt.Printf("ID %d %s download completed\n", pid, string(subMatch1[1]))
+	log.Printf("%d Downloaded %s\n", pid, string(subMatch1[1]))
 
 }
 
