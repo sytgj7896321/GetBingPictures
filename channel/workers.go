@@ -41,7 +41,7 @@ func ScannerLog(fp *os.File, overwrite bool) map[int]bool {
 	var logScanner = map[int]bool{}
 	scanner := bufio.NewScanner(fp)
 	if err := scanner.Err(); err != nil {
-		fmt.Fprint(os.Stderr, "Read log Error ", err)
+		fmt.Fprintf(os.Stderr, "Read log Error %s\n", err)
 		return nil
 	} else {
 		for scanner.Scan() {

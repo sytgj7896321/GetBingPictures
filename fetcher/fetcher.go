@@ -20,8 +20,8 @@ func Fetch(url string) ([]byte, error) {
 		return nil, err
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
-	myCookie := "downloadResolution=Default; _ga=GA1.2.320636588.1624586497; _gid=GA1.2.1522885183.1624586497; ai_user=GuQz5|2021-06-25T02:01:40.030Z; cookieConsent=1; _gat=1; ai_session=8Be6S|1624633197976|1624633461938.335"
-	req.Header.Set("cookie", myCookie)
+	//myCookie := "downloadResolution=Default; _ga=GA1.2.320636588.1624586497; _gid=GA1.2.1522885183.1624586497; ai_user=GuQz5|2021-06-25T02:01:40.030Z; cookieConsent=1; _gat=1; ai_session=8Be6S|1624633197976|1624633461938.335"
+	//req.Header.Set("cookie", myCookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln(err)
