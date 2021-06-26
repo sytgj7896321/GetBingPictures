@@ -1,25 +1,15 @@
 package main
 
 import (
+	"GetBingPictures/channel"
 	"GetBingPictures/parser"
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"sync"
 )
 
-type worker struct {
-	in   chan int
-	done func()
-}
-
 const (
-	homePage       = "https://wallpaperhub.app/"
-	target         = "https://wallpaperhub.app/wallpapers/"
-	path           = "wallpapers"
 	logName        = "record.log"
 	workerTotalNum = 20
 )
@@ -28,8 +18,8 @@ func main() {
 	var overwrite bool
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
 	flag.Parse()
-	endNum := parser.FetchNewestId(homePage)
-	err := createPath(path)
+	endNum := parser.FetchNewestId(parser.HomePage)
+	err := createPath(parser.Path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme", err)
 		return
@@ -40,47 +30,27 @@ func main() {
 		return
 	}
 	defer fp.Close()
-	mapLog := scannerLog(fp, overwrite)
+	mapLog := channel.ScannerLog(fp, overwrite)
 	getBingPictures(endNum, fp, mapLog)
 
 }
 
 func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
 	var wg sync.WaitGroup
-	var workers [workerTotalNum]worker
+	var workers [workerTotalNum]channel.Worker
 	wg.Add(endNum)
 	for i := 0; i < workerTotalNum; i++ {
-		workers[i] = createWorker(i, &wg, fp, logMap)
+		workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
 	}
 
 	for task := 0; task <= endNum; task++ {
 		for i, worker := range workers {
 			if task%(workerTotalNum+1) == i {
-				worker.in <- task
+				worker.In <- task
 			}
 		}
 	}
 	wg.Wait()
-}
-
-func createWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool) worker {
-	w := worker{
-		in: make(chan int, 1024),
-		done: func() {
-			wg.Done()
-		},
-	}
-	go doWork(id, w, fp, logMap)
-	return w
-}
-
-func doWork(id int, w worker, fp *os.File, logMap map[int]bool) {
-	for i := range w.in {
-		if !logMap[i] {
-			parser.Parser(i, id, target+strconv.Itoa(i), path, fp)
-			w.done()
-		}
-	}
 }
 
 func createPath(path string) error {
@@ -97,24 +67,4 @@ func createPath(path string) error {
 		return nil
 	}
 	return err
-}
-
-func scannerLog(fp *os.File, overwrite bool) map[int]bool {
-	var logScanner = map[int]bool{}
-	scanner := bufio.NewScanner(fp)
-	if err := scanner.Err(); err != nil {
-		fmt.Fprint(os.Stderr, "Read log Error", err)
-		return nil
-	} else {
-		for scanner.Scan() {
-			stringSlice := strings.Split(scanner.Text(), " ")
-			id, _ := strconv.Atoi(stringSlice[3])
-			if overwrite && stringSlice[4] == "Found" {
-				logScanner[id] = false
-			} else {
-				logScanner[id] = true
-			}
-		}
-		return logScanner
-	}
 }
