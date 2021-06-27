@@ -23,7 +23,7 @@ func main() {
 	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
 	flag.Parse()
 
-	endNum := parser.FetchNewestId(parser.HomePage)
+	endNum := parser.NewFetchNewestId(parser.HomePage)
 	err := createPath(parser.Path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, ", Exit Programme ", err)

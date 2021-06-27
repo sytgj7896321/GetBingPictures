@@ -29,7 +29,7 @@ func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File, logMap map[int]bool) 
 func doWork(id int, w Worker, fp *os.File, logMap map[int]bool) {
 	for i := range w.In {
 		if !logMap[i] {
-			parser.Parser(i, id, fp)
+			parser.OldParser(i, id, fp)
 			w.done()
 		}
 	}

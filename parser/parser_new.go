@@ -7,24 +7,23 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 )
 
 const (
-	HomePage = "https://wallpaperhub.app/"
-	Path     = "wallpapers"
+//HomePage = "https://wallpaperhub.app/"
+//Path     = "wallpapers"
 )
 
 var (
-	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
-	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
-	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
+//end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
+//picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
+//picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
 )
 
-func Parser(pid, wid int, fp *os.File) {
+func NewParser(pid, wid int, fp *os.File) {
 	log.SetOutput(fp)
 	log.SetPrefix("[GetBingTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -72,7 +71,7 @@ func Parser(pid, wid int, fp *os.File) {
 
 }
 
-func FetchNewestId(homePage string) int {
+func NewFetchNewestId(homePage string) int {
 	result, _ := fetcher.Fetch(homePage)
 	subMatch := end.FindSubmatch(result)
 	endNum, _ := strconv.Atoi(string(subMatch[1]))
