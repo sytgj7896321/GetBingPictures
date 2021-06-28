@@ -25,8 +25,8 @@ func Fetch(url string) ([]byte, error) {
 		return nil, err
 	}
 
-	chrome := browser.Chrome()
-	req.Header.Set("User-Agent", chrome)
+	random := browser.Random()
+	req.Header.Set("User-Agent", random)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln(err)

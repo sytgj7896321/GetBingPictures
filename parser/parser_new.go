@@ -3,78 +3,83 @@ package parser
 import (
 	"GetBingPictures/fetcher"
 	"fmt"
-	"io/ioutil"
+	"github.com/PuerkitoBio/goquery"
 	"log"
-	"net/http"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 )
 
 const (
-//HomePage = "https://wallpaperhub.app/"
-//Path     = "wallpapers"
+	BingSrc             = "https://bing.ioliu.cn/?p="
+	BingGetLatestNum    = "body > div.page > span"
+	BingTarget          = "https://cn.bing.com/th?id=OHR."
+	selectorDate        = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > p.calendar > em"
+	selectorName        = "body > div.container > div:nth-child(ReplaceHere) > div > a"
+	selectorDescription = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > h3"
 )
 
-var (
-//end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
-//picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
-//picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
-)
+type BingPic struct {
+	Date        string
+	Name        string
+	Description string
+	Url         string
+}
 
-func NewParser(pid, wid int, fp *os.File) {
+func Parser(pid, wid int, fp *os.File) {
 	log.SetOutput(fp)
 	log.SetPrefix("[GetBingTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	fmt.Printf("Worker %d received Task %d, and begin fetching\n", wid, pid)
-	result, _ := fetcher.Fetch(HomePage + Path + "/" + strconv.Itoa(pid))
-	subMatch1 := picName.FindSubmatch(result)
-	subMatch2 := picUrl.FindSubmatch(result)
-	if subMatch1 == nil || subMatch2 == nil {
-		fmt.Printf("No wallpaper with ID %d found\n", pid)
-		log.Printf("%d Not\u00a0found\n", pid)
-		return
-	}
-	chars := []byte{'/', '\\', ':', '*', '?', '<', '>', '|'}
-	switch runtime.GOOS {
-	case "windows":
-		for _, c := range chars {
-			subMatch1[1] = []byte(strings.Replace(string(subMatch1[1]), string(c), "", -1))
-		}
-	default:
-		subMatch1[1] = []byte(strings.Replace(string(subMatch1[1]), string(chars[0]), "", -1))
-	}
+	result, _ := fetcher.Fetch(BingSrc)
 
-	subMatch1[1] = append(subMatch1[1], ".jpg"...)
-
-	fmt.Printf("Find and begin download: %s\n", subMatch1[1])
-	resp, err := http.Get(string(subMatch2[1]))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Get Image Error %s\n", err)
+	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
+	for i := 1; i <= 12; i++ {
+		selectors := changeSelectors(i, selectorDate, selectorName, selectorDescription)
+		getSelectors(dom, selectors...)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "IO Read Error %s\n", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	err = ioutil.WriteFile(Path+"/"+string(subMatch1[1]), data, 0755)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "IO Write Error %s\n", err)
-		return
-	}
-	fmt.Printf("ID %d %s download completed\n", pid, string(subMatch1[1]))
-	log.Printf("%d Found %s\n", pid, string(subMatch1[1]))
 
 }
 
-func NewFetchNewestId(homePage string) int {
-	result, _ := fetcher.Fetch(homePage)
-	subMatch := end.FindSubmatch(result)
-	endNum, _ := strconv.Atoi(string(subMatch[1]))
-	fmt.Printf("Newest Wallpaper ID is %d\n", endNum)
-	return endNum
+func FetchLatestPageNum() (int, error) {
+	result, _ := fetcher.Fetch(BingSrc + "1")
+	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
+	lastNum := selectorParser(BingGetLatestNum, dom)
+	fmt.Println(lastNum)
+	lastNum = strings.TrimLeft(lastNum, "1 / ")
+	return strconv.Atoi(lastNum)
+}
+
+func getSelectors(dom *goquery.Document, selectors ...string) {
+	for _, selector := range selectors {
+		fmt.Printf("%s\n", selectorParser(selector, dom))
+	}
+}
+
+func changeSelectors(i int, selectors ...string) []string {
+	for id, _ := range selectors {
+		selectors[id] = strings.Replace(selectors[id], "ReplaceHere", strconv.Itoa(i), -1)
+	}
+	return selectors
+}
+
+func selectorParser(element string, dom *goquery.Document) string {
+	var s string
+	dom.Find(element).Each(func(i int, selection *goquery.Selection) {
+		if selection.Is("a") {
+			selection, _ := selection.Attr("href")
+			f := func(c rune) bool {
+				if c == '/' || c == '?' {
+					return true
+				} else {
+					return false
+				}
+			}
+			arr := strings.FieldsFunc(selection, f)
+			s = arr[1]
+		} else {
+			s = selection.Text()
+		}
+	})
+	return s
 }

@@ -11,34 +11,35 @@ import (
 )
 
 const (
-	logName     = "record.log"
-	concurrency = 8
+	logName    = "record.log"
+	goroutines = 8
 )
 
 var (
-	overwrite bool
+	goroutine int
 )
 
 func main() {
-	flag.BoolVar(&overwrite, "w", false, "Overwrite Mode: skip not found, re-download found pictures)")
+	flag.IntVar(&goroutine, "c", 16, "Set how many coroutines you want to use")
 	flag.Parse()
 
-	endNum := parser.NewFetchNewestId(parser.HomePage)
+	lastNum, _ := parser.FetchLatestPageNum()
 	err := createPath(parser.Path)
 	if err != nil {
-		fmt.Fprint(os.Stderr, ", Exit Programme ", err)
+		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
 	fp, err := os.OpenFile(logName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		fmt.Fprint(os.Stderr, ", Exit Programme ", err)
+		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
 	defer fp.Close()
-	mapLog := channel.ScannerLog(fp, overwrite)
-	getBingPictures(endNum, fp, mapLog)
-	fmt.Println("All done, Ctrl+C or 5 seconds later will exit programme")
-	timeout := time.After(5 * time.Second)
+
+	//mapLog := channel.ScannerLog(fp, overwrite)
+	//Engine(lastNum, fp, mapLog)
+	Engine(lastNum, fp)
+	timeout := time.After(3 * time.Second)
 	for {
 		select {
 		case <-timeout:
@@ -48,21 +49,27 @@ func main() {
 	}
 }
 
-func getBingPictures(endNum int, fp *os.File, logMap map[int]bool) {
+func Engine(lastNum int, fp *os.File) {
 	var wg sync.WaitGroup
-	var workers [concurrency]channel.Worker
-	wg.Add(endNum + 1)
-	for i := 0; i < concurrency; i++ {
-		workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
-	}
+	var workers = make([]channel.Worker, goroutines)
+	fmt.Println(lastNum)
+	wg.Add(goroutines)
+	for i := 0; i < goroutines; i++ {
+		//workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
+		workers[i] = channel.CreateWorker(i, &wg, fp)
 
-	for task := 0; task <= endNum; task++ {
+	}
+	for task := 0; task <= lastNum; task++ {
 		for i, worker := range workers {
-			if task%(concurrency+1) == i {
+			if task%(goroutines+1) == i {
 				worker.In <- task
 			}
 		}
 	}
+	for i := range workers {
+		close(workers[i].In)
+	}
+	wg.Wait()
 }
 
 func createPath(path string) error {
