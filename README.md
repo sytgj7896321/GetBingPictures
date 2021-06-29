@@ -1,2 +1,2 @@
-# GetBingPictures
-A tiny tool for getting Bing daily picture
+# GetBingWallpaperTool
+A tiny tool for getting Bing daily wallpapers

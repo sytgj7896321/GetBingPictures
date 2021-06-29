@@ -15,10 +15,13 @@ import (
 	"time"
 )
 
-var rateLimiter = time.Tick(200 * time.Millisecond)
+var (
+	RateLimiter = time.Tick(500 * time.Millisecond)
+	ProxyAdd    string
+)
 
 func Fetch(link string) ([]byte, error) {
-	<-rateLimiter
+	<-RateLimiter
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		log.Fatalln(err)
@@ -27,11 +30,10 @@ func Fetch(link string) ([]byte, error) {
 
 	transport := &http.Transport{
 		Proxy: func(_ *http.Request) (*url.URL, error) {
-			return url.Parse("http://127.0.0.1:10809")
+			return url.Parse(ProxyAdd)
 		},
 	}
 	client := &http.Client{Transport: transport}
-
 	random := browser.Random()
 	req.Header.Set("User-Agent", random)
 	resp, err := client.Do(req)

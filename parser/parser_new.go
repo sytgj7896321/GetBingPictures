@@ -3,10 +3,12 @@ package parser
 import (
 	"GetBingPictures/fetcher"
 	"fmt"
+	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -14,7 +16,7 @@ import (
 
 const (
 	Path                = "wallpapers"
-	bingSrc             = "https://bing.ioliu.cn/?p="
+	bingSrc             = "https://bing.ioliu.cn/"
 	bingGetLatestNum    = "body > div.page > span"
 	bingTarget          = "https://cn.bing.com/th?id=OHR."
 	selectorDate        = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > p.calendar > em"
@@ -27,17 +29,18 @@ type BingPic struct {
 	Name        string
 	Description string
 	Url         string
+	OldUrl      string
 }
 
 func Parser(tid int, fp *os.File) {
-	var sName string
-	var sUrl string
+	var picName string
+	var picUrl string
 	bingPicList := make([]BingPic, 12)
 	log.SetOutput(fp)
-	log.SetPrefix("[GetBingTool]")
+	log.SetPrefix("[GetBingWallpaperTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	result, _ := fetcher.Fetch(bingSrc + strconv.Itoa(tid))
+	result, _ := fetcher.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 
 	for i := 1; i <= 12; i++ {
@@ -46,17 +49,17 @@ func Parser(tid int, fp *os.File) {
 	}
 
 	for _, b := range bingPicList {
-		sName = b.Name + "_UHD.jpg"
-		sUrl = b.Url + "_UHD.jpg"
-		resp, err := http.Get(sUrl)
+		picName = b.Name + "_UHD.jpg"
+		picUrl = b.Url
+		resp, err := fetchBody(picUrl)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
 			continue
 		}
 		if resp.StatusCode == 404 {
-			sName = b.Name + "_1920x1080.jpg"
-			sUrl = b.Url + "_1920x1080.jpg"
-			resp, err = http.Get(sUrl)
+			picName = b.Name + "_1920x1080.jpg"
+			picUrl = b.OldUrl
+			resp, err = fetchBody(picUrl)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
 				continue
@@ -68,7 +71,7 @@ func Parser(tid int, fp *os.File) {
 			resp.Body.Close()
 			continue
 		}
-		err = ioutil.WriteFile(Path+"/"+b.Date+"_"+sName, data, 0755)
+		err = ioutil.WriteFile(Path+"/"+b.Date+"_"+picName, data, 0755)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "IO Write Error %s\n", err)
 			resp.Body.Close()
@@ -92,7 +95,8 @@ func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
 	b.Date = selectorParser(selectors[0], dom)
 	b.Name = selectorParser(selectors[1], dom)
 	b.Description = selectorParser(selectors[2], dom)
-	b.Url = bingTarget + b.Name
+	b.Url = bingTarget + b.Name + "_UHD.jpg"
+	b.OldUrl = bingSrc + "photo/" + b.Name + "?force=download"
 }
 
 func changeSelectors(i int, selectors ...string) []string {
@@ -121,4 +125,27 @@ func selectorParser(element string, dom *goquery.Document) string {
 		}
 	})
 	return s
+}
+
+func fetchBody(link string) (*http.Response, error) {
+	<-fetcher.RateLimiter
+	req, err := http.NewRequest("GET", link, nil)
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	transport := &http.Transport{
+		Proxy: func(_ *http.Request) (*url.URL, error) {
+			return url.Parse(fetcher.ProxyAdd)
+		},
+	}
+	client := &http.Client{Transport: transport}
+	random := browser.Random()
+	req.Header.Set("User-Agent", random)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	return resp, nil
 }

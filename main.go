@@ -2,6 +2,7 @@ package main
 
 import (
 	"GetBingPictures/channel"
+	"GetBingPictures/fetcher"
 	"GetBingPictures/parser"
 	"flag"
 	"fmt"
@@ -18,7 +19,8 @@ var (
 )
 
 func main() {
-	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use")
+	flag.IntVar(&goroutines, "c", 8, "Set how many coroutines you want to use")
+	flag.StringVar(&fetcher.ProxyAdd, "p", "http://127.0.0.1:10809", "Set http proxy address")
 	flag.Parse()
 
 	lastNum, _ := parser.FetchLatestPageNum()
