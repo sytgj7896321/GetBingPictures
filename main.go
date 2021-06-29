@@ -42,16 +42,7 @@ func main() {
 	defer fp.Close()
 
 	parser.ScannerRecord(rp)
-	//Engine(lastNum, fp, mapLog)
 	Engine(lastNum, rp, fp)
-	//timeout := time.After(3 * time.Second)
-	//for {
-	//	select {
-	//	case <-timeout:
-	//		fmt.Println("Exited")
-	//		return
-	//	}
-	//}
 }
 
 func Engine(lastNum int, rp, fp *os.File) {

@@ -7,6 +7,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -22,7 +23,9 @@ const (
 	selectorDescription = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > h3"
 )
 
-var LogScanner = map[string]bool{}
+var (
+	LogScanner = map[string]bool{}
+)
 
 type BingPic struct {
 	Date        string
@@ -52,7 +55,7 @@ func Parser(tid int, rp, fp *os.File) {
 		if !LogScanner[b.Name] {
 			picName = b.Name + "_UHD.jpg"
 			picUrl = b.Url
-			resp, err := fetcher.FetchBody(picUrl)
+			resp, err := http.Get(picUrl)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
 				log.Printf("%s\n", err)
@@ -84,7 +87,7 @@ func Parser(tid int, rp, fp *os.File) {
 			}
 			fmt.Printf("%s download completed\n", b.Name)
 			log.SetOutput(rp)
-			log.Printf("%s\n", b.Name)
+			log.Printf("%s %s\n", b.Name, b.Description)
 			resp.Body.Close()
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
@@ -93,7 +96,7 @@ func Parser(tid int, rp, fp *os.File) {
 }
 
 func FetchLatestPageNum() (int, error) {
-	result, _ := fetcher.Fetch(bingSrc + "1")
+	result, _ := fetcher.Fetch(bingSrc + "?p=" + "1")
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 	lastNum := selectorParser(bingGetLatestNum, dom)
 	lastNum = strings.Replace(lastNum, "1 / ", "", -1)

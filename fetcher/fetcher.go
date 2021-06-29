@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	RateLimiter = time.Tick(250 * time.Millisecond)
+	rateLimiter = time.Tick(1000 * time.Millisecond)
 	ProxyAdd    string
 )
 
 func Fetch(link string) ([]byte, error) {
-	<-RateLimiter
+	<-rateLimiter
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
@@ -64,6 +64,7 @@ func determineEncoding(r *bufio.Reader) encoding.Encoding {
 }
 
 func FetchBody(link string) (*http.Response, error) {
+	<-rateLimiter
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
