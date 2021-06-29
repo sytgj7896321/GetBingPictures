@@ -15,7 +15,7 @@ type Worker struct {
 	done func()
 }
 
-func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File) Worker {
+func CreateWorker(wg *sync.WaitGroup, fp *os.File) Worker {
 	w := Worker{
 		In: make(chan int, 32),
 		done: func() {
@@ -24,14 +24,14 @@ func CreateWorker(id int, wg *sync.WaitGroup, fp *os.File) Worker {
 	}
 
 	//go doWork(id, w, fp, logMap)
-	go doWork(id, w, fp)
+	go doWork(w, fp)
 	return w
 }
 
-func doWork(id int, w Worker, fp *os.File) {
+func doWork(w Worker, fp *os.File) {
 	for i := range w.In {
 		//if !logMap[i] {
-		parser.Parser(i, id, fp)
+		parser.Parser(i, fp)
 		//}
 	}
 	w.done()

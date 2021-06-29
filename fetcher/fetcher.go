@@ -11,19 +11,26 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 var rateLimiter = time.Tick(200 * time.Millisecond)
 
-func Fetch(url string) ([]byte, error) {
+func Fetch(link string) ([]byte, error) {
 	<-rateLimiter
-	client := &http.Client{}
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
 	}
+
+	transport := &http.Transport{
+		Proxy: func(_ *http.Request) (*url.URL, error) {
+			return url.Parse("http://127.0.0.1:10809")
+		},
+	}
+	client := &http.Client{Transport: transport}
 
 	random := browser.Random()
 	req.Header.Set("User-Agent", random)

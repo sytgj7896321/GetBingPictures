@@ -7,20 +7,18 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"time"
 )
 
 const (
-	logName    = "record.log"
-	goroutines = 8
+	logName = "record.log"
 )
 
 var (
-	goroutine int
+	goroutines int
 )
 
 func main() {
-	flag.IntVar(&goroutine, "c", 16, "Set how many coroutines you want to use")
+	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use")
 	flag.Parse()
 
 	lastNum, _ := parser.FetchLatestPageNum()
@@ -39,36 +37,35 @@ func main() {
 	//mapLog := channel.ScannerLog(fp, overwrite)
 	//Engine(lastNum, fp, mapLog)
 	Engine(lastNum, fp)
-	timeout := time.After(3 * time.Second)
-	for {
-		select {
-		case <-timeout:
-			fmt.Println("Exited")
-			return
-		}
-	}
+	//timeout := time.After(3 * time.Second)
+	//for {
+	//	select {
+	//	case <-timeout:
+	//		fmt.Println("Exited")
+	//		return
+	//	}
+	//}
 }
 
 func Engine(lastNum int, fp *os.File) {
 	var wg sync.WaitGroup
 	var workers = make([]channel.Worker, goroutines)
-	fmt.Println(lastNum)
 	wg.Add(goroutines)
 	for i := 0; i < goroutines; i++ {
 		//workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
-		workers[i] = channel.CreateWorker(i, &wg, fp)
+		workers[i] = channel.CreateWorker(&wg, fp)
 
 	}
-	for task := 0; task <= lastNum; task++ {
+	for task := 1; task <= lastNum; task++ {
 		for i, worker := range workers {
-			if task%(goroutines+1) == i {
+			if task%goroutines == i {
 				worker.In <- task
 			}
 		}
 	}
-	for i := range workers {
-		close(workers[i].In)
-	}
+	//for  _, worker := range workers {
+	//	close(worker.In)
+	//}
 	wg.Wait()
 }
 
@@ -82,7 +79,7 @@ func createPath(path string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Path '" + path + "' created")
+		fmt.Println("Directory '" + path + "' created")
 		return nil
 	}
 	return err

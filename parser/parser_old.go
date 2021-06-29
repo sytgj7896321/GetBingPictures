@@ -15,11 +15,11 @@ import (
 
 const (
 	HomePage = "https://wallpaperhub.app/"
-	Path     = "wallpapers"
+	PathOld  = "wallpaper"
 )
 
 var (
-	end     = regexp.MustCompile(`<a href="/wallpapers/([0-9]+)">View</a>`)
+	end     = regexp.MustCompile(`<a href="/wallpaper/([0-9]+)">View</a>`)
 	picName = regexp.MustCompile(`<title data-react-helmet="true">(.+) \| Wallpapers \| WallpaperHub</title>`)
 	picUrl  = regexp.MustCompile(`<img src="(https://cdn.wallpaperhub.app/cloudcache/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]/[0-9a-z]{40}\.jpg)"/>`)
 )
@@ -30,7 +30,7 @@ func OldParser(pid, wid int, fp *os.File) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	fmt.Printf("Worker %d received Task %d, and begin fetching\n", wid, pid)
-	result, _ := fetcher.Fetch(HomePage + Path + "/" + strconv.Itoa(pid))
+	result, _ := fetcher.Fetch(HomePage + PathOld + "/" + strconv.Itoa(pid))
 	subMatch1 := picName.FindSubmatch(result)
 	subMatch2 := picUrl.FindSubmatch(result)
 	if subMatch1 == nil || subMatch2 == nil {
@@ -62,7 +62,7 @@ func OldParser(pid, wid int, fp *os.File) {
 	}
 	defer resp.Body.Close()
 
-	err = ioutil.WriteFile(Path+"/"+string(subMatch1[1]), data, 0755)
+	err = ioutil.WriteFile(PathOld+"/"+string(subMatch1[1]), data, 0755)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "IO Write Error %s\n", err)
 		return
