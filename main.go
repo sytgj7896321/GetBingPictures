@@ -60,9 +60,9 @@ func Engine(lastNum int, rp, fp *os.File) {
 			}
 		}
 	}
-	//for  _, worker := range workers {
-	//	close(worker.In)
-	//}
+	for _, worker := range workers {
+		close(worker.In)
+	}
 	wg.Wait()
 }
 

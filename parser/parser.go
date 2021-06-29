@@ -38,10 +38,8 @@ func Parser(tid int, rp, fp *os.File) {
 	var picName string
 	var picUrl string
 	bingPicList := make([]BingPic, 12)
-	log.SetOutput(fp)
 	log.SetPrefix("[GetBingWallpaperTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
 	result, _ := fetcher.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 
@@ -51,6 +49,7 @@ func Parser(tid int, rp, fp *os.File) {
 	}
 
 	for _, b := range bingPicList {
+		log.SetOutput(fp)
 		if !LogScanner[b.Name] {
 			picName = b.Name + "_UHD.jpg"
 			picUrl = b.Url + "_UHD.jpg"
