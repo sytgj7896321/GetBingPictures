@@ -64,10 +64,13 @@ func Parser(tid int, rp, fp *os.File) {
 			if resp.StatusCode == 404 {
 				picName = b.Name + "_1920x1080.jpg"
 				picUrl = b.OldUrl
-				resp, err = fetcher.FetchBody(picUrl)
+				resp, err = http.Get(picUrl)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
 					log.Printf("%s\n", err)
+					continue
+				}
+				if resp.StatusCode == 404 {
 					continue
 				}
 			}

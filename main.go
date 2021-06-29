@@ -18,7 +18,7 @@ const (
 var goroutines int
 
 func main() {
-	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use like -c 8")
+	flag.IntVar(&goroutines, "c", 8, "Set how many coroutines you want to use like -c 8")
 	flag.StringVar(&fetcher.ProxyAdd, "p", "", "Set http proxy address like -p \"http://127.0.0.1:10809\"")
 	flag.Parse()
 
