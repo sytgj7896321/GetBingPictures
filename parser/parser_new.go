@@ -2,13 +2,11 @@ package parser
 
 import (
 	"GetBingPictures/fetcher"
+	"bufio"
 	"fmt"
-	browser "github.com/EDDYCJY/fake-useragent"
 	"github.com/PuerkitoBio/goquery"
 	"io/ioutil"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -24,6 +22,8 @@ const (
 	selectorDescription = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > h3"
 )
 
+var LogScanner = map[string]bool{}
+
 type BingPic struct {
 	Date        string
 	Name        string
@@ -32,7 +32,7 @@ type BingPic struct {
 	OldUrl      string
 }
 
-func Parser(tid int, fp *os.File) {
+func Parser(tid int, rp, fp *os.File) {
 	var picName string
 	var picUrl string
 	bingPicList := make([]BingPic, 12)
@@ -49,38 +49,47 @@ func Parser(tid int, fp *os.File) {
 	}
 
 	for _, b := range bingPicList {
-		picName = b.Name + "_UHD.jpg"
-		picUrl = b.Url
-		resp, err := fetchBody(picUrl)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
-			continue
-		}
-		if resp.StatusCode == 404 {
-			picName = b.Name + "_1920x1080.jpg"
-			picUrl = b.OldUrl
-			resp, err = fetchBody(picUrl)
+		if !LogScanner[b.Name] {
+			picName = b.Name + "_UHD.jpg"
+			picUrl = b.Url
+			resp, err := fetcher.FetchBody(picUrl)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
+				log.Printf("%s\n", err)
 				continue
 			}
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Image Read Error %s\n", err)
+			if resp.StatusCode == 404 {
+				picName = b.Name + "_1920x1080.jpg"
+				picUrl = b.OldUrl
+				resp, err = fetcher.FetchBody(picUrl)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
+					log.Printf("%s\n", err)
+					continue
+				}
+			}
+			data, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Image Read Error %s\n", err)
+				log.Printf("%s\n", err)
+				resp.Body.Close()
+				continue
+			}
+			err = ioutil.WriteFile(Path+"/"+b.Date+"_"+picName, data, 0755)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "IO Write Error %s\n", err)
+				log.Printf("%s\n", err)
+				resp.Body.Close()
+				continue
+			}
+			fmt.Printf("%s download completed\n", b.Name)
+			log.SetOutput(rp)
+			log.Printf("%s\n", b.Name)
 			resp.Body.Close()
-			continue
+		} else {
+			fmt.Printf("%s has downloaded skip\n", b.Name)
 		}
-		err = ioutil.WriteFile(Path+"/"+b.Date+"_"+picName, data, 0755)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "IO Write Error %s\n", err)
-			resp.Body.Close()
-			continue
-		}
-		fmt.Printf("%s download completed\n", b.Name)
-		resp.Body.Close()
 	}
-
 }
 
 func FetchLatestPageNum() (int, error) {
@@ -89,6 +98,18 @@ func FetchLatestPageNum() (int, error) {
 	lastNum := selectorParser(bingGetLatestNum, dom)
 	lastNum = strings.Replace(lastNum, "1 / ", "", -1)
 	return strconv.Atoi(lastNum)
+}
+
+func ScannerRecord(rp *os.File) {
+	scanner := bufio.NewScanner(rp)
+	if err := scanner.Err(); err != nil {
+		fmt.Fprintf(os.Stderr, "Read Record Error %s\n", err)
+	} else {
+		for scanner.Scan() {
+			stringSlice := strings.Split(scanner.Text(), " ")
+			LogScanner[stringSlice[3]] = true
+		}
+	}
 }
 
 func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
@@ -125,27 +146,4 @@ func selectorParser(element string, dom *goquery.Document) string {
 		}
 	})
 	return s
-}
-
-func fetchBody(link string) (*http.Response, error) {
-	<-fetcher.RateLimiter
-	req, err := http.NewRequest("GET", link, nil)
-	if err != nil {
-		log.Fatalln(err)
-		return nil, err
-	}
-	transport := &http.Transport{
-		Proxy: func(_ *http.Request) (*url.URL, error) {
-			return url.Parse(fetcher.ProxyAdd)
-		},
-	}
-	client := &http.Client{Transport: transport}
-	random := browser.Random()
-	req.Header.Set("User-Agent", random)
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalln(err)
-		return nil, err
-	}
-	return resp, nil
 }

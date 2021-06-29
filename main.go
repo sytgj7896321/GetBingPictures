@@ -11,16 +11,15 @@ import (
 )
 
 const (
-	logName = "record.log"
+	recordLog = "DownloadRecord.log"
+	errLog    = "Error.log"
 )
 
-var (
-	goroutines int
-)
+var goroutines int
 
 func main() {
-	flag.IntVar(&goroutines, "c", 8, "Set how many coroutines you want to use")
-	flag.StringVar(&fetcher.ProxyAdd, "p", "http://127.0.0.1:10809", "Set http proxy address")
+	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use like -c 8")
+	flag.StringVar(&fetcher.ProxyAdd, "p", "", "Set http proxy address like -p \"http://127.0.0.1:10809\"")
 	flag.Parse()
 
 	lastNum, _ := parser.FetchLatestPageNum()
@@ -29,16 +28,22 @@ func main() {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
-	fp, err := os.OpenFile(logName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	rp, err := os.OpenFile(recordLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err, ", exit programme\n")
+		return
+	}
+	defer rp.Close()
+	fp, err := os.OpenFile(errLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
 	defer fp.Close()
 
-	//mapLog := channel.ScannerLog(fp, overwrite)
+	parser.ScannerRecord(rp)
 	//Engine(lastNum, fp, mapLog)
-	Engine(lastNum, fp)
+	Engine(lastNum, rp, fp)
 	//timeout := time.After(3 * time.Second)
 	//for {
 	//	select {
@@ -49,13 +54,12 @@ func main() {
 	//}
 }
 
-func Engine(lastNum int, fp *os.File) {
+func Engine(lastNum int, rp, fp *os.File) {
 	var wg sync.WaitGroup
 	var workers = make([]channel.Worker, goroutines)
 	wg.Add(goroutines)
 	for i := 0; i < goroutines; i++ {
-		//workers[i] = channel.CreateWorker(i, &wg, fp, logMap)
-		workers[i] = channel.CreateWorker(&wg, fp)
+		workers[i] = channel.CreateWorker(&wg, rp, fp)
 
 	}
 	for task := 1; task <= lastNum; task++ {

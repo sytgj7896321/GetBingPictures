@@ -16,24 +16,26 @@ import (
 )
 
 var (
-	RateLimiter = time.Tick(500 * time.Millisecond)
+	RateLimiter = time.Tick(250 * time.Millisecond)
 	ProxyAdd    string
 )
 
 func Fetch(link string) ([]byte, error) {
 	<-RateLimiter
+	client := &http.Client{}
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
 		log.Fatalln(err)
 		return nil, err
 	}
-
-	transport := &http.Transport{
-		Proxy: func(_ *http.Request) (*url.URL, error) {
-			return url.Parse(ProxyAdd)
-		},
+	if ProxyAdd != "" {
+		transport := &http.Transport{
+			Proxy: func(_ *http.Request) (*url.URL, error) {
+				return url.Parse(ProxyAdd)
+			},
+		}
+		client = &http.Client{Transport: transport}
 	}
-	client := &http.Client{Transport: transport}
 	random := browser.Random()
 	req.Header.Set("User-Agent", random)
 	resp, err := client.Do(req)
@@ -59,4 +61,29 @@ func determineEncoding(r *bufio.Reader) encoding.Encoding {
 	}
 	e, _, _ := charset.DetermineEncoding(bytes, "")
 	return e
+}
+
+func FetchBody(link string) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", link, nil)
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	if ProxyAdd != "" {
+		transport := &http.Transport{
+			Proxy: func(_ *http.Request) (*url.URL, error) {
+				return url.Parse(ProxyAdd)
+			},
+		}
+		client = &http.Client{Transport: transport}
+	}
+	random := browser.Random()
+	req.Header.Set("User-Agent", random)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
+		return nil, err
+	}
+	return resp, nil
 }
