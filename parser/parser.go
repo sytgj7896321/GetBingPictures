@@ -32,7 +32,6 @@ type BingPic struct {
 	Name        string
 	Description string
 	Url         string
-	OldUrl      string
 }
 
 func Parser(tid int, rp, fp *os.File) {
@@ -54,23 +53,20 @@ func Parser(tid int, rp, fp *os.File) {
 	for _, b := range bingPicList {
 		if !LogScanner[b.Name] {
 			picName = b.Name + "_UHD.jpg"
-			picUrl = b.Url
+			picUrl = b.Url + "_UHD.jpg"
 			resp, err := http.Get(picUrl)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
+				fmt.Fprintf(os.Stderr, "Get Image Error %s\n", err)
 				log.Printf("%s\n", err)
 				continue
 			}
 			if resp.StatusCode == 404 {
 				picName = b.Name + "_1920x1080.jpg"
-				picUrl = b.OldUrl
+				picUrl = b.Url + "_1920x1080.jpg"
 				resp, err = http.Get(picUrl)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Get Image Error %d\n", err)
+				if err != nil || resp.StatusCode == 404 {
+					fmt.Fprintf(os.Stderr, "Get Image Error %s\n", err)
 					log.Printf("%s\n", err)
-					continue
-				}
-				if resp.StatusCode == 404 {
 					continue
 				}
 			}
@@ -122,8 +118,7 @@ func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
 	b.Date = selectorParser(selectors[0], dom)
 	b.Name = selectorParser(selectors[1], dom)
 	b.Description = selectorParser(selectors[2], dom)
-	b.Url = bingTarget + b.Name + "_UHD.jpg"
-	b.OldUrl = bingSrc + "photo/" + b.Name + "?force=download"
+	b.Url = bingTarget + b.Name
 }
 
 func changeSelectors(i int, selectors ...string) []string {
