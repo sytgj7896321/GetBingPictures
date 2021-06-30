@@ -15,14 +15,23 @@ const (
 	errLog    = "Error.log"
 )
 
-var goroutines int
+var (
+	goroutines int
+	dailyMode  bool
+)
 
 func main() {
 	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use like -c 8")
 	flag.StringVar(&fetcher.ProxyAdd, "p", "", "Set http proxy address like -p \"http://127.0.0.1:10809\"")
+	flag.BoolVar(&dailyMode, "daily-mode", false, "set true to open daily update mode")
 	flag.Parse()
 
-	lastNum, _ := parser.FetchLatestPageNum()
+	var lastNum int
+	if !dailyMode {
+		lastNum, _ = parser.FetchLatestPageNum()
+	} else {
+		lastNum = 1
+	}
 	err := createPath(parser.Path)
 	if err != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
