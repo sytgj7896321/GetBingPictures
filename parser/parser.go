@@ -64,8 +64,6 @@ func Parser(tid int, rp, fp *os.File) {
 				picUrl = b.Url + "_1920x1080.jpg"
 				resp, err = http.Get(picUrl)
 				if err != nil || resp.StatusCode == 404 {
-					fmt.Fprintf(os.Stderr, "Get Image Error %s\n", err)
-					log.Printf("%s\n", err)
 					continue
 				}
 			}
