@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -50,7 +51,7 @@ func Parser(tid int, rp, fp *os.File) {
 
 	for _, b := range bingPicList {
 		log.SetOutput(fp)
-		if !LogScanner[b.Name] {
+		if !LogScanner[b.Name] && b.Date >= "2018-09-11" {
 			picName = b.Name + "_UHD.jpg"
 			picUrl = b.Url + "_UHD.jpg"
 			resp, err := http.Get(picUrl)
@@ -82,8 +83,9 @@ func Parser(tid int, rp, fp *os.File) {
 				continue
 			}
 			fmt.Printf("%s download completed\n", b.Name)
-			log.SetOutput(rp)
-			log.Printf("%s %s\n", b.Name, b.Description)
+			//log.SetOutput(rp)
+			//log.Printf("%s %s\n", b.Name, b.Description)
+			io.WriteString(rp, b.Name+" "+b.Description+" \n")
 			resp.Body.Close()
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
@@ -106,7 +108,7 @@ func ScannerRecord(rp *os.File) {
 	} else {
 		for scanner.Scan() {
 			stringSlice := strings.Split(scanner.Text(), " ")
-			LogScanner[stringSlice[3]] = true
+			LogScanner[stringSlice[0]] = true
 		}
 	}
 }
