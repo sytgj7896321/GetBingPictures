@@ -12,11 +12,12 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 )
 
 var (
-	rateLimiter = time.Tick(2000 * time.Millisecond)
+	rateLimiter = time.Tick(500 * time.Millisecond)
 	ProxyAdd    string
 )
 
@@ -25,7 +26,7 @@ func Fetch(link string) ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", link, nil)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return nil, err
 	}
 	if ProxyAdd != "" {
@@ -40,7 +41,7 @@ func Fetch(link string) ([]byte, error) {
 	req.Header.Set("User-Agent", random)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
