@@ -112,7 +112,7 @@ func ScannerRecord(rp *os.File) {
 	}
 }
 
-func (b BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
+func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
 	b.Date, _ = selectorParser(selectors[0], dom)
 	b.Name, _ = selectorParser(selectors[1], dom)
 	_, bTmp := selectorParser(selectors[2], dom)
