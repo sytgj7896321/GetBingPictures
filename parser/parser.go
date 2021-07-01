@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"GetBingPictures/fetcher/iii"
+	"GetBingPictures/fetcher"
 	"bufio"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -42,7 +42,7 @@ func Parser(tid int, rp, fp *os.File) {
 	bingPicList := make([]BingPic, 12)
 	log.SetPrefix("[GetBingWallpaperTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	result, _ := iii.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
+	result, _ := fetcher.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 
 	for i := 1; i <= 12; i++ {
@@ -93,7 +93,7 @@ func Parser(tid int, rp, fp *os.File) {
 }
 
 func FetchLatestPageNum() (int, error) {
-	result, _ := iii.Fetch(bingSrc + "?p=" + "1")
+	result, _ := fetcher.Fetch(bingSrc + "?p=" + "1")
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 	lastNum, _ := selectorParser(bingGetLatestNum, dom)
 	lastNum = strings.Replace(lastNum, "1 / ", "", -1)

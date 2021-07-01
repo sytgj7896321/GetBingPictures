@@ -1,4 +1,4 @@
-package iii
+package fetcher
 
 import (
 	"bufio"
