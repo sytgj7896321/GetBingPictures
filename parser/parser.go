@@ -15,13 +15,13 @@ import (
 )
 
 const (
-	Path                = "wallpapers"
-	bingSrc             = "https://bing.ioliu.cn/"
-	bingGetLatestNum    = "body > div.page > span"
-	bingTarget          = "https://cn.bing.com/th?id=OHR."
-	selectorDate        = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > p.calendar > em"
-	selectorName        = "body > div.container > div:nth-child(ReplaceHere) > div > a"
-	selectorDescription = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > h3"
+	Path                      = "wallpapers"
+	bingSrc                   = "https://bing.ioliu.cn/"
+	bingGetLatestNum          = "body > div.page > span"
+	bingTarget                = "https://cn.bing.com/th?id=OHR."
+	selectorDate              = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > p.calendar > em"
+	selectorName              = "body > div.container > div:nth-child(ReplaceHere) > div > a"
+	selectorArtistDescription = "body > div.container > div:nth-child(ReplaceHere) > div > div.description > h3"
 )
 
 var (
@@ -31,6 +31,7 @@ var (
 type BingPic struct {
 	Date        string
 	Name        string
+	Artist      string
 	Description string
 	Url         string
 }
@@ -45,7 +46,7 @@ func Parser(tid int, rp, fp *os.File) {
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 
 	for i := 1; i <= 12; i++ {
-		selectors := changeSelectors(i, selectorDate, selectorName, selectorDescription)
+		selectors := changeSelectors(i, selectorDate, selectorName, selectorArtistDescription)
 		bingPicList[i-1].getSelectors(dom, selectors...)
 	}
 
@@ -85,7 +86,7 @@ func Parser(tid int, rp, fp *os.File) {
 			fmt.Printf("%s download completed\n", b.Name)
 			//log.SetOutput(rp)
 			//log.Printf("%s %s\n", b.Name, b.Description)
-			io.WriteString(rp, b.Name+" "+b.Description+" \n")
+			io.WriteString(rp, b.Name+" "+b.Description+"\n")
 			resp.Body.Close()
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
@@ -96,7 +97,7 @@ func Parser(tid int, rp, fp *os.File) {
 func FetchLatestPageNum() (int, error) {
 	result, _ := fetcher.Fetch(bingSrc + "?p=" + "1")
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
-	lastNum := selectorParser(bingGetLatestNum, dom)
+	lastNum, _ := selectorParser(bingGetLatestNum, dom)
 	lastNum = strings.Replace(lastNum, "1 / ", "", -1)
 	return strconv.Atoi(lastNum)
 }
@@ -114,9 +115,11 @@ func ScannerRecord(rp *os.File) {
 }
 
 func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
-	b.Date = selectorParser(selectors[0], dom)
-	b.Name = selectorParser(selectors[1], dom)
-	b.Description = selectorParser(selectors[2], dom)
+	b.Date, _ = selectorParser(selectors[0], dom)
+	b.Name, _ = selectorParser(selectors[1], dom)
+	_, bTmp := selectorParser(selectors[2], dom)
+	b.Artist = bTmp[0]
+	b.Description = bTmp[1]
 	b.Url = bingTarget + b.Name
 }
 
@@ -127,8 +130,9 @@ func changeSelectors(i int, selectors ...string) []string {
 	return selectors
 }
 
-func selectorParser(element string, dom *goquery.Document) string {
+func selectorParser(element string, dom *goquery.Document) (string, []string) {
 	var s string
+	var sSub []string
 	dom.Find(element).Each(func(i int, selection *goquery.Selection) {
 		if selection.Is("a") {
 			selection, _ := selection.Attr("href")
@@ -141,9 +145,23 @@ func selectorParser(element string, dom *goquery.Document) string {
 			}
 			arr := strings.FieldsFunc(selection, f)
 			s = arr[1]
+		} else if selection.Is("h3") {
+			sSub = mySplit(selection.Text())
 		} else {
 			s = selection.Text()
 		}
 	})
-	return s
+	return s, sSub
+}
+
+func mySplit(str string) []string {
+	var strSub []string
+	strSub = strings.Split(str, "(©")
+	if len(strSub) != 2 {
+		strSub = strings.Split(str, "（©")
+		strSub[1] = strings.TrimRight(strSub[1], "）")
+		return strSub
+	}
+	strSub[1] = strings.TrimRight(strSub[1], ")")
+	return strSub
 }
