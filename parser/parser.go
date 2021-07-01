@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"GetBingPictures/fetcher"
+	"GetBingPictures/fetcher/iii"
 	"bufio"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
@@ -42,7 +42,7 @@ func Parser(tid int, rp, fp *os.File) {
 	bingPicList := make([]BingPic, 12)
 	log.SetPrefix("[GetBingWallpaperTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	result, _ := fetcher.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
+	result, _ := iii.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 
 	for i := 1; i <= 12; i++ {
@@ -84,9 +84,7 @@ func Parser(tid int, rp, fp *os.File) {
 				continue
 			}
 			fmt.Printf("%s download completed\n", b.Name)
-			//log.SetOutput(rp)
-			//log.Printf("%s %s\n", b.Name, b.Description)
-			io.WriteString(rp, b.Name+" "+b.Description+"\n")
+			io.WriteString(rp, b.Name+" "+b.Artist+" "+b.Description+"\n")
 			resp.Body.Close()
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
@@ -95,7 +93,7 @@ func Parser(tid int, rp, fp *os.File) {
 }
 
 func FetchLatestPageNum() (int, error) {
-	result, _ := fetcher.Fetch(bingSrc + "?p=" + "1")
+	result, _ := iii.Fetch(bingSrc + "?p=" + "1")
 	dom, _ := goquery.NewDocumentFromReader(strings.NewReader(string(result)))
 	lastNum, _ := selectorParser(bingGetLatestNum, dom)
 	lastNum = strings.Replace(lastNum, "1 / ", "", -1)
@@ -114,7 +112,7 @@ func ScannerRecord(rp *os.File) {
 	}
 }
 
-func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
+func (b BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
 	b.Date, _ = selectorParser(selectors[0], dom)
 	b.Name, _ = selectorParser(selectors[1], dom)
 	_, bTmp := selectorParser(selectors[2], dom)
@@ -136,8 +134,8 @@ func selectorParser(element string, dom *goquery.Document) (string, []string) {
 	dom.Find(element).Each(func(i int, selection *goquery.Selection) {
 		if selection.Is("a") {
 			selection, _ := selection.Attr("href")
-			f := func(c rune) bool {
-				if c == '/' || c == '?' {
+			f := func(r rune) bool {
+				if r == '/' || r == '?' {
 					return true
 				} else {
 					return false
@@ -156,10 +154,18 @@ func selectorParser(element string, dom *goquery.Document) (string, []string) {
 
 func mySplit(str string) []string {
 	var strSub []string
-	strSub = strings.Split(str, "(©")
+	strSub = strings.Split(str, " (© ")
 	if len(strSub) != 2 {
-		strSub = strings.Split(str, "（©")
-		strSub[1] = strings.TrimRight(strSub[1], "）")
+		strSub = strings.Split(str, "©")
+		for _, s := range strSub {
+			s = strings.TrimRightFunc(s, func(r rune) bool {
+				if r == '（' || r == '）' {
+					return true
+				} else {
+					return false
+				}
+			})
+		}
 		return strSub
 	}
 	strSub[1] = strings.TrimRight(strSub[1], ")")
