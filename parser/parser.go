@@ -134,14 +134,13 @@ func selectorParser(element string, dom *goquery.Document) (string, []string) {
 	dom.Find(element).Each(func(i int, selection *goquery.Selection) {
 		if selection.Is("a") {
 			selection, _ := selection.Attr("href")
-			f := func(r rune) bool {
+			arr := strings.FieldsFunc(selection, func(r rune) bool {
 				if r == '/' || r == '?' {
 					return true
 				} else {
 					return false
 				}
-			}
-			arr := strings.FieldsFunc(selection, f)
+			})
 			s = arr[1]
 		} else if selection.Is("h3") {
 			sSub = mySplit(selection.Text())
