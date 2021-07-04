@@ -38,7 +38,7 @@ func main() {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
-	err2 := createUnixScript()
+	err2 := createShellScript()
 	if err2 != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
@@ -97,7 +97,7 @@ func createPath(path string) error {
 	return err
 }
 
-func createUnixScript() error {
+func createShellScript() error {
 	script, err := os.OpenFile(scriptName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	defer script.Close()
 	if err != nil {
@@ -107,5 +107,6 @@ func createUnixScript() error {
 	script.WriteString(`#!/bin/bash
 exiftool -overwrite_original -artist="$1" "$3"
 exiftool -overwrite_original -usercomment="$2" "$3"`)
+	//TODO compatible with windows powershell
 	return nil
 }
