@@ -134,8 +134,8 @@ func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {
 	b.Date, _ = selectorParser(selectors[0], dom)
 	b.Name, _ = selectorParser(selectors[1], dom)
 	_, bTmp := selectorParser(selectors[2], dom)
-	b.Artist = bTmp[0]
-	b.Description = bTmp[1]
+	b.Artist = bTmp[1]
+	b.Description = bTmp[0]
 	b.Url = bingTarget + b.Name
 }
 
