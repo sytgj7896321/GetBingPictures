@@ -84,7 +84,7 @@ func Parser(tid int, rp, fp *os.File) {
 				continue
 			}
 			fmt.Printf("%s download completed\n", b.Name)
-			io.WriteString(rp, b.Name+" "+b.Artist+" "+b.Description+"\n")
+			io.WriteString(rp, b.Name+" "+b.Description+" (© "+b.Artist+")\n")
 			resp.Body.Close()
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
