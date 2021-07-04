@@ -24,7 +24,7 @@ var (
 func main() {
 	flag.IntVar(&goroutines, "c", 4, "Set how many coroutines you want to use like -c 8")
 	flag.StringVar(&fetcher.ProxyAdd, "p", "", "Set http proxy address like -p \"http://127.0.0.1:10809\" (default not use)")
-	flag.BoolVar(&dailyMode, "daily-mode", true, "set false to open full download mode")
+	flag.BoolVar(&dailyMode, "daily-mode", true, "set -daily-mode=false to open full download mode")
 	flag.Parse()
 
 	var lastNum int
