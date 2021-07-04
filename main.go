@@ -98,7 +98,7 @@ func createPath(path string) error {
 }
 
 func createUnixScript() error {
-	script, err := os.OpenFile(scriptName, os.O_WRONLY|os.O_TRUNC, 0755)
+	script, err := os.OpenFile(scriptName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
 	defer script.Close()
 	if err != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
