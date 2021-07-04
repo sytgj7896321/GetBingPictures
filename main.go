@@ -13,7 +13,7 @@ import (
 const (
 	recordLog  = "DownloadRecord.log"
 	errLog     = "Error.log"
-	scriptName = "wrapperUnix.sh"
+	scriptName = "wrapper.sh"
 )
 
 var (
