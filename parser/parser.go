@@ -88,7 +88,7 @@ func Parser(tid int, rp, fp *os.File) {
 			fmt.Printf("%s download completed\n", b.Name)
 			io.WriteString(rp, b.Name+" "+b.Description+" (© "+b.Artist+")\n")
 			resp.Body.Close()
-			args := []string{b.Artist, b.Description, Path + "/" + b.Date + "_" + picName}
+			args := []string{"© " + b.Artist, b.Description, Path + "/" + b.Date + "_" + picName}
 			CmdAndChangeDir("./", "./wrapper.sh", args)
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
