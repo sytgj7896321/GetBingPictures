@@ -3,6 +3,7 @@ package parser
 import (
 	"GetBingPictures/fetcher"
 	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 )
@@ -40,6 +42,7 @@ func Parser(tid int, rp, fp *os.File) {
 	var picName string
 	var picUrl string
 	bingPicList := make([]BingPic, 12)
+	log.SetOutput(fp)
 	log.SetPrefix("[GetBingWallpaperTool]")
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	result, _ := fetcher.Fetch(bingSrc + "?p=" + strconv.Itoa(tid))
@@ -51,7 +54,6 @@ func Parser(tid int, rp, fp *os.File) {
 	}
 
 	for _, b := range bingPicList {
-		log.SetOutput(fp)
 		if !LogScanner[b.Name] && b.Date >= "2018-09-11" {
 			picName = b.Name + "_UHD.jpg"
 			picUrl = b.Url + "_UHD.jpg"
@@ -86,6 +88,8 @@ func Parser(tid int, rp, fp *os.File) {
 			fmt.Printf("%s download completed\n", b.Name)
 			io.WriteString(rp, b.Name+" "+b.Description+" (© "+b.Artist+")\n")
 			resp.Body.Close()
+			args := []string{b.Artist, b.Description, Path + "/" + b.Date + "_" + picName}
+			CmdAndChangeDir("./", "./wrapperUnix.sh", args)
 		} else {
 			fmt.Printf("%s has downloaded skip\n", b.Name)
 		}
@@ -110,6 +114,20 @@ func ScannerRecord(rp *os.File) {
 			LogScanner[stringSlice[0]] = true
 		}
 	}
+}
+
+func CmdAndChangeDir(dir string, commandName string, params []string) (string, error) {
+	cmd := exec.Command(commandName, params...)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	cmd.Dir = dir
+	err := cmd.Start()
+	if err != nil {
+		return "", err
+	}
+	err = cmd.Wait()
+	return out.String(), err
 }
 
 func (b *BingPic) getSelectors(dom *goquery.Document, selectors ...string) {

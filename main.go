@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	recordLog = "DownloadRecord.log"
-	errLog    = "Error.log"
+	recordLog  = "DownloadRecord.log"
+	errLog     = "Error.log"
+	scriptName = "wrapperUnix.sh"
 )
 
 var (
@@ -37,14 +38,19 @@ func main() {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
-	rp, err := os.OpenFile(recordLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
+	err2 := createUnixScript()
+	if err2 != nil {
+		fmt.Fprint(os.Stderr, err, ", exit programme\n")
+		return
+	}
+	rp, err3 := os.OpenFile(recordLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err3 != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
 	defer rp.Close()
-	fp, err := os.OpenFile(errLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
+	fp, err4 := os.OpenFile(errLog, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err4 != nil {
 		fmt.Fprint(os.Stderr, err, ", exit programme\n")
 		return
 	}
@@ -89,4 +95,17 @@ func createPath(path string) error {
 		return nil
 	}
 	return err
+}
+
+func createUnixScript() error {
+	script, err := os.OpenFile(scriptName, os.O_WRONLY|os.O_TRUNC, 0755)
+	defer script.Close()
+	if err != nil {
+		fmt.Fprint(os.Stderr, err, ", exit programme\n")
+		return err
+	}
+	script.WriteString(`#!/bin/bash
+exiftool -overwrite_original -artist="$1" "$3"
+exiftool -overwrite_original -usercomment="$2" "$3"`)
+	return nil
 }
