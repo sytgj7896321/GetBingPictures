@@ -174,16 +174,8 @@ func mySplit(str string) []string {
 	var strSub []string
 	strSub = strings.Split(str, " (© ")
 	if len(strSub) != 2 {
-		strSub = strings.Split(str, "©")
-		for _, s := range strSub {
-			s = strings.TrimRightFunc(s, func(r rune) bool {
-				if r == '（' || r == '）' {
-					return true
-				} else {
-					return false
-				}
-			})
-		}
+		strSub = strings.Split(str, " （ © ")
+		strSub[1] = strings.TrimRight(strSub[1], " ）")
 		return strSub
 	}
 	strSub[1] = strings.TrimRight(strSub[1], ")")
