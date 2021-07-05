@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	rateLimiter = time.Tick(2000 * time.Millisecond)
+	rateLimiter = time.Tick(3000 * time.Millisecond)
 	ProxyAdd    string
 )
 
