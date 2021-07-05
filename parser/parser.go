@@ -172,12 +172,15 @@ func selectorParser(element string, dom *goquery.Document) (string, []string) {
 
 func mySplit(str string) []string {
 	var strSub []string
-	strSub = strings.Split(str, " (© ")
-	if len(strSub) != 2 {
-		strSub = strings.Split(str, " （ © ")
-		strSub[1] = strings.TrimRight(strSub[1], " ）")
-		return strSub
+	strSub = strings.Split(str, "©")
+	for i, v := range strSub {
+		strSub[i] = strings.TrimFunc(v, func(r rune) bool {
+			if r == ' ' || r == '(' || r == ')' || r == '（' || r == '）' {
+				return true
+			} else {
+				return false
+			}
+		})
 	}
-	strSub[1] = strings.TrimRight(strSub[1], ")")
 	return strSub
 }
