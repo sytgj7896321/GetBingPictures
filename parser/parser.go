@@ -174,7 +174,8 @@ func mySplit(str string) []string {
 	var strSub []string
 	strSub = strings.Split(str, "©")
 	if len(strSub) != 2 {
-		strSub = []string{"", ""}
+		strSub[0] = "unknown"
+		strSub[1] = "unknown"
 		return strSub
 	}
 	for i, v := range strSub {
